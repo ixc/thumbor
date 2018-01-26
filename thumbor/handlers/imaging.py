@@ -12,6 +12,7 @@ from six.moves.urllib.parse import quote, unquote
 
 from thumbor.handlers import ContextHandler
 from thumbor.context import RequestParameters
+import hashlib
 import tornado.gen as gen
 import tornado.web
 
@@ -20,7 +21,13 @@ class ImagingHandler(ContextHandler):
 
     def compute_etag(self):
         if self.context.config.ENABLE_ETAGS:
-            return super(ImagingHandler, self).compute_etag()
+            if self.context.config.MD5_ETAGS:
+                hasher = hashlib.md5()
+                for part in self._write_buffer:
+                    hasher.update(part)
+                return '"%s"' % hasher.hexdigest()
+            else:
+                return super(ImagingHandler, self).compute_etag()
         else:
             return None
 
